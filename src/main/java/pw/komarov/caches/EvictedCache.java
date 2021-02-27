@@ -1,23 +1,15 @@
 package pw.komarov.caches;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NonNull;
+import lombok.*;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public class EvictedCache<K,V> implements Map<K,V> {
-    @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-    class CacheEntry {
-        @Getter int accessedCount;
-        @Getter long accessedAt;
-        @Getter final long createdAt;
-        @EqualsAndHashCode.Include final K object;
+public class EvictedCache<K,V> implements EvictedMap<K,V> {
+    public class CacheEntry {
+        @Getter private int accessedCount;
+        @Getter private long accessedAt;
+        @Getter private final long createdAt;
+        @Getter private final K object;
 
         CacheEntry(K object) {
             this.object = object;
@@ -29,6 +21,24 @@ public class EvictedCache<K,V> implements Map<K,V> {
         private void increaseUsage() {
             ++accessedCount;
             accessedAt = System.currentTimeMillis();
+        }
+
+        @Override
+        public String toString() {
+            return object.toString();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if(o.getClass() != object.getClass())
+                return false;
+
+            return object.equals(o);
+        }
+
+        @Override
+        public int hashCode() {
+            return object.hashCode();
         }
     }
 
@@ -159,6 +169,11 @@ public class EvictedCache<K,V> implements Map<K,V> {
         public V setValue(V v) {
             return this.value = v;
         }
+
+        @Override
+        public String toString() {
+            return key + "=" + value;
+        }
     }
 
     @Override
@@ -182,21 +197,27 @@ public class EvictedCache<K,V> implements Map<K,V> {
         return data.keySet().stream().min(this::compare).orElse(null);
     }
 
-    public V getEvicted() {
-        if(!isEmpty())
-            return data.get(getEvictedEntry());
-
-        return null;
-    }
-
-    public void evict(int count) {
-        for(int i = 1; i <= count; i++) {
-            evictItem();
-        }
-    }
-
+    @Override
     public void evictItem() {
         if(!isEmpty())
             data.remove(getEvictedEntry());
+    }
+
+    @Override
+    public String toString() {
+        return data.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Map)) return false;
+
+        return data.equals(o);
+    }
+
+    @Override
+    public int hashCode() {
+        return data.hashCode();
     }
 }
