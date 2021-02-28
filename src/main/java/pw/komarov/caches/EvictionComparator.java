@@ -3,6 +3,6 @@ package pw.komarov.caches;
 import java.util.Comparator;
 
 @FunctionalInterface
-public interface EvictionComparator extends Comparator<EvictedMap.CacheEntry> {
-    int compare(EvictedMap.CacheEntry right, EvictedMap.CacheEntry left);
+public interface EvictionComparator<K> extends Comparator<EvictedMap.CacheEntry<K>> {
+    int compare(EvictedMap.CacheEntry<K> right, EvictedMap.CacheEntry<K> left);
 }

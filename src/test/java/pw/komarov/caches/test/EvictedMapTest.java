@@ -3,11 +3,11 @@ package pw.komarov.caches.test;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import pw.komarov.caches.EvictedMap;
-import pw.komarov.caches.EvictionComparator;
 
 class EvictedMapTest {
     @Test
@@ -15,7 +15,8 @@ class EvictedMapTest {
         int CAPACITY = 15;
 
         //initial capacity test
-        EvictedMap<Integer,Integer> cache = new EvictedMap<>(CAPACITY, new Dummy());
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(CAPACITY, (l,r) -> 0);
+        assertEquals(CAPACITY, cache.getCapacity());
         for (int i = 1; i <= CAPACITY + 100; i++)
             cache.put(i, i);
         assertEquals(CAPACITY, cache.size());
@@ -25,17 +26,19 @@ class EvictedMapTest {
         for (int i = 1; i <= CAPACITY + 100; i++)
             cache.put(i, i);
         assertEquals(CAPACITY, cache.size());
+        assertEquals(CAPACITY, cache.getCapacity());
 
         //trimmed capacity test
         cache.setCapacity(CAPACITY/=2);
         assertEquals(CAPACITY, cache.size());
+        assertEquals(CAPACITY, cache.getCapacity());
     }
 
     @Test
     void sizeTest() {
         final int SIZE = 10;
 
-        EvictedMap<Integer,Integer> cache = new EvictedMap<>(SIZE + 1, new Dummy());
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(SIZE + 1, (l,r) -> 0);
         for (int i = 1; i <= SIZE; i++)
             cache.put(i, i);
 
@@ -44,7 +47,7 @@ class EvictedMapTest {
 
     @Test
     void replaceValueTest() {
-        EvictedMap<Integer,Integer> cache = new EvictedMap<>(10, new Dummy());
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(10, (l,r) -> 0);
         cache.put(1,1);
         cache.put(2,4);
         cache.put(3,6);
@@ -62,7 +65,7 @@ class EvictedMapTest {
 
     @Test
     void containsTest() {
-        EvictedMap<Integer,Integer> cache = new EvictedMap<>(10, new Dummy());
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(10, (l,r) -> 0);
         cache.put(5,15);
         cache.put(10,35);
         cache.put(12,66);
@@ -80,7 +83,7 @@ class EvictedMapTest {
 
     @Test
     void removeTest() {
-        EvictedMap<Integer,Integer> cache = new EvictedMap<>(10, new Dummy());
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(10, (l,r) -> 0);
         cache.put(100, 200);
         cache.put(300, 400);
         cache.put(500, 600);
@@ -109,7 +112,7 @@ class EvictedMapTest {
         map.put(3,4);
         map.put(5,6);
         map.put(7,8);
-        EvictedMap<Integer,Integer> cache = new EvictedMap<>(map.size(), new Dummy());
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(map.size(), (l,r) -> 0);
         cache.putAll(map);
 
         assertEquals(cache.size(), map.size());
@@ -119,7 +122,7 @@ class EvictedMapTest {
 
     @Test
     void clearTest() {
-        EvictedMap<Integer,Integer> cache = new EvictedMap<>(10, new Dummy());
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(10, (l,r) -> 0);
         cache.put(1,2);
         cache.put(3,4);
         cache.put(5,6);
@@ -131,13 +134,13 @@ class EvictedMapTest {
     }
 
     @Test
-    void entrySetTest() {
+    void entriesTest() {
         Map<Integer,Integer> map = new HashMap<>();
         map.put(1,2);
         map.put(3,4);
         map.put(5,6);
         map.put(7,8);
-        EvictedMap<Integer,Integer> cache = new EvictedMap<>(map.size() + 5, new Dummy());
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(map.size() + 5, (l,r) -> 0);
         cache.putAll(map);
 
         assertEquals(map.entrySet(), cache.entrySet());
@@ -145,6 +148,16 @@ class EvictedMapTest {
         assertNotEquals(map.entrySet(), cache.entrySet());
         cache.put(9,10);
         assertEquals(map.entrySet(), cache.entrySet());
+
+        assertEquals(map.keySet(), cache.keySet());
+        assertEquals(cache.keySet(), map.keySet());
+
+        Object[] mapValues = map.values().toArray();
+        Object[] cacheValues = cache.values().toArray();
+        Arrays.sort(mapValues);
+        Arrays.sort(cacheValues);
+
+        assertArrayEquals(mapValues, cacheValues);
     }
 
     @Test
@@ -154,7 +167,7 @@ class EvictedMapTest {
         map.put(3,4);
         map.put(5,6);
         map.put(7,8);
-        EvictedMap<Integer,Integer> cache = new EvictedMap<>(map.size(), new Dummy());
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(map.size(), (l,r) -> 0);
         cache.putAll(map);
 
         assertEquals(map.hashCode(), cache.hashCode());
@@ -165,21 +178,21 @@ class EvictedMapTest {
 
     @Test
     void toStringTest() {
-        EvictedMap<Integer,String> cache = new EvictedMap<>(1, new Dummy());
+        EvictedMap<Integer,String> cache = new EvictedMap<>(1, (l,r) -> 0);
         cache.put(5, "String value for five");
         assertEquals(cache.toString(), "{5=String value for five}");
     }
 
     @Test
     void evictTest() {
-        EvictedMap<Integer,String> cache = new EvictedMap<>(1, new Dummy());
+        EvictedMap<Integer,String> cache = new EvictedMap<>(1, (l,r) -> 0);
         cache.put(5, "String value for five");
         assertEquals(cache.toString(), "{5=String value for five}");
     }
 
     @Test
     void nullAsKeyTest() {
-        EvictedMap<Integer,Integer> cache = new EvictedMap<>(2, new Dummy());
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(2, (l,r) -> 0);
 
         cache.put(1, 7);
         assertEquals(cache.size(), 1);
@@ -196,7 +209,7 @@ class EvictedMapTest {
 
     @Test
     void nullAsValueTest() {
-        EvictedMap<Integer,Integer> cache = new EvictedMap<>(2, new Dummy());
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(2, (l,r) -> 0);
         cache.put(5, null);
         assertEquals(cache.size(), 1);
         assertTrue(cache.containsKey(5));
@@ -206,7 +219,7 @@ class EvictedMapTest {
 
     @Test
     void nullAsKeyAndValueTest() {
-        EvictedMap<Integer,Integer> cache = new EvictedMap<>(2, new Dummy());
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(2, (l,r) -> 0);
         cache.put(5, null);
         cache.put(null, 5);
         cache.put(null, null);
@@ -214,10 +227,15 @@ class EvictedMapTest {
         assertNull(cache.get(null));
     }
 
-    class Dummy implements EvictionComparator {
-        @Override
-        public int compare(EvictedMap.CacheEntry right, EvictedMap.CacheEntry left) {
-            return 0;
-        }
+
+
+
+
+
+    @Test
+    void suppress() {
+        EvictedMap<Integer,Integer> cache = new EvictedMap<>(2, (l,r) -> (int)(l.getObject() == null ? 0 : 1 + r.getAccessedCount() + l.getAccessedAt() + l.getCreatedAt()));
+        cache.put(1,1);
+        assertEquals(cache.get(1), 1);
     }
 }

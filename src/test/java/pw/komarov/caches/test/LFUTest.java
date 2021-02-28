@@ -1,10 +1,10 @@
 package pw.komarov.caches.test;
 
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
 import pw.komarov.caches.EvictedMap;
 import pw.komarov.caches.EvictedMapLFU;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class LFUTest {
     @Test

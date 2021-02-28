@@ -1,9 +1,5 @@
 package pw.komarov.caches;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NonNull;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,13 +7,30 @@ import java.util.Map;
 import java.util.Set;
 
 public class EvictedMap<K,V> implements EvictedMapInterface<K,V> {
-    public class CacheEntry {
-        @Getter private int accessedCount;
-        @Getter private long accessedAt;
-        @Getter private final long createdAt;
-        @Getter private final K object;
+    public static class CacheEntry<O> {
+        private int accessedCount;
+        private long accessedAt;
+        private final long createdAt;
 
-        CacheEntry(K object) {
+        public int getAccessedCount() {
+            return accessedCount;
+        }
+
+        public long getAccessedAt() {
+            return accessedAt;
+        }
+
+        public long getCreatedAt() {
+            return createdAt;
+        }
+
+        public O getObject() {
+            return object;
+        }
+
+        private final O object;
+
+        CacheEntry(O object) {
             this.object = object;
             this.createdAt = System.currentTimeMillis();
 
@@ -57,8 +70,12 @@ public class EvictedMap<K,V> implements EvictedMapInterface<K,V> {
     }
 
     private HashMap<CacheEntry, V> data;
-    @Getter
+
     private int capacity;
+
+    public int getCapacity() {
+        return capacity;
+    }
 
     public void setCapacity(int newCapacity) {
         if(newCapacity < 1)
@@ -76,10 +93,11 @@ public class EvictedMap<K,V> implements EvictedMapInterface<K,V> {
         }
     }
 
-    @NonNull
-    private EvictionComparator evictionComparator;
+    private EvictionComparator<K> evictionComparator;
 
-    public EvictedMap(int initialCapacity, @NonNull EvictionComparator evictionComparator) {
+    public EvictedMap(int initialCapacity, EvictionComparator<K> evictionComparator) {
+        if(evictionComparator == null)
+            throw new IllegalArgumentException("evictionComparator must be not null");
         if(initialCapacity > 0) {
             this.evictionComparator = evictionComparator;
             this.capacity = initialCapacity;
@@ -92,22 +110,27 @@ public class EvictedMap<K,V> implements EvictedMapInterface<K,V> {
         return data.keySet().stream().filter(entry -> ((o == null && entry.object == null) || (entry.object != null && entry.object.equals(o)) )).findAny().orElse(null);
     }
 
+    @Override
     public boolean isEmpty() {
         return data.isEmpty();
     }
 
+    @Override
     public int size() {
         return data.size();
     }
 
+    @Override
     public boolean containsValue(Object value) {
         return data.containsValue(value);
     }
 
+    @Override
     public boolean containsKey(Object key) {
         return getEntry(key) != null;
     }
 
+    @Override
     public V get(Object key) {
         CacheEntry entry = getEntry(key);
 
@@ -120,6 +143,8 @@ public class EvictedMap<K,V> implements EvictedMapInterface<K,V> {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
     public V put(K k, V v) {
         CacheEntry entry = getEntry(k);
 
@@ -134,6 +159,7 @@ public class EvictedMap<K,V> implements EvictedMapInterface<K,V> {
         return data.put(entry, v);
     }
 
+    @Override
     public V remove(Object o) {
         CacheEntry entry = getEntry(o);
         if(entry != null)
@@ -142,18 +168,21 @@ public class EvictedMap<K,V> implements EvictedMapInterface<K,V> {
             return null;
     }
 
+    @Override
     public void putAll(Map<? extends K, ? extends V> map) {
         map.forEach(this::put);
     }
 
+    @Override
     public void clear() {
         data.clear();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Set<K> keySet() {
         Set<K> set = new HashSet<>();
-        data.forEach((k,v) -> set.add(k.object));
+        data.forEach((k,v) -> set.add((K)k.object));
 
         return set;
     }
@@ -163,11 +192,15 @@ public class EvictedMap<K,V> implements EvictedMapInterface<K,V> {
         return data.values();
     }
 
-    @AllArgsConstructor
     private class Node implements Map.Entry<K,V> {
-        private K key;
+        private final K key;
 
         private V value;
+
+        Node(K key, V value) {
+            this.key = key;
+            this.value = value;
+        }
 
         @Override
         public K getKey() {
@@ -190,25 +223,27 @@ public class EvictedMap<K,V> implements EvictedMapInterface<K,V> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Set<Map.Entry<K, V>> entrySet() {
         Set<Map.Entry<K,V>> set = new HashSet<>();
 
-        data.forEach((k,v) -> set.add(new Node(k.object, v)));
+        data.forEach((k,v) -> set.add(new Node((K)k.object, v)));
 
         return set;
     }
 
-    private int compare(CacheEntry right, CacheEntry left) {
+    private int compare(CacheEntry<K> right, CacheEntry<K> left) {
         return compare(right, left, this.evictionComparator);
     }
 
-    private int compare(CacheEntry right, CacheEntry left, EvictionComparator evictionComparator) {
+    private int compare(CacheEntry<K> right, CacheEntry<K> left, EvictionComparator<K> evictionComparator) {
         return evictionComparator.compare(right, left);
     }
 
-    private CacheEntry getEvictedEntry() {
-        return data.keySet().stream().min(this::compare).orElse(null);
+    private CacheEntry<?> getEvictedEntry() {
+        Object cacheEntry = data.keySet().stream().min(this::compare).orElse(null);
+        return (CacheEntry)cacheEntry;
     }
 
     @Override
