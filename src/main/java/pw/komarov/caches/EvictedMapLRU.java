@@ -1,14 +1,14 @@
 package pw.komarov.caches;
 
-public class EvictedCacheLRU<K, V> extends EvictedCache<K,V> {
+public class EvictedMapLRU<K, V> extends EvictedMap<K,V> {
     private static class ComparatorLRU implements EvictionComparator {
         @Override
-        public int compare(EvictedCache.CacheEntry right, EvictedCache.CacheEntry left) {
+        public int compare(EvictedMap.CacheEntry right, EvictedMap.CacheEntry left) {
             return Long.compare(right.getAccessedAt(), left.getAccessedAt());
         }
     }
 
-    public EvictedCacheLRU(int initialCapacity) {
+    public EvictedMapLRU(int initialCapacity) {
         super(initialCapacity, new ComparatorLRU());
     }
 }
