@@ -4,9 +4,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.opentest4j.AssertionFailedError;
 import pw.komarov.caches.EvictedMap;
 
 class EvictedMapTest {
@@ -115,9 +117,7 @@ class EvictedMapTest {
         EvictedMap<Integer,Integer> cache = new EvictedMap<>(map.size(), (l,r) -> 0);
         cache.putAll(map);
 
-        assertEquals(cache.size(), map.size());
-        for(Integer value : map.keySet())
-            assertEquals(cache.get(value), map.get(value));
+        assertEquals(map, cache);
     }
 
     @Test
@@ -143,21 +143,17 @@ class EvictedMapTest {
         EvictedMap<Integer,Integer> cache = new EvictedMap<>(map.size() + 5, (l,r) -> 0);
         cache.putAll(map);
 
-        assertEquals(map.entrySet(), cache.entrySet());
+        assertEqualsItems(map.entrySet(), cache.entrySet());
         map.put(9, 10);
-        assertNotEquals(map.entrySet(), cache.entrySet());
+        assertNotEqualsItems(map.entrySet(), cache.entrySet());
         cache.put(9,10);
-        assertEquals(map.entrySet(), cache.entrySet());
+        assertEqualsItems(map.entrySet(), cache.entrySet());
 
         assertEquals(map.keySet(), cache.keySet());
         assertEquals(cache.keySet(), map.keySet());
 
-        Object[] mapValues = map.values().toArray();
-        Object[] cacheValues = cache.values().toArray();
-        Arrays.sort(mapValues);
-        Arrays.sort(cacheValues);
-
-        assertArrayEquals(mapValues, cacheValues);
+        assertEqualsItems(cache.keySet(), map.keySet());
+        assertEqualsItems(map.values(), cache.values());
     }
 
     @Test
@@ -227,8 +223,25 @@ class EvictedMapTest {
         assertNull(cache.get(null));
     }
 
+    private void assertEqualsItems(Collection expected, Collection actual) {
+        int expectedSize = expected.size();
+        int actualSize   = actual.size();
+        if(expectedSize != actualSize)
+            assertFail(expected, actual);
 
+        for(Object actualObject : actual)
+            if(!expected.contains(actualObject))
+                assertFail(expected, actual);
+    }
 
+    private void assertNotEqualsItems(Collection expected, Collection actual) {
+        assertThrows(AssertionFailedError.class, () -> assertEqualsItems(expected, actual),
+                "expected: not equal but was: <" + actual + ">");
+    }
+
+    private void assertFail(Object expected, Object actual) {
+        throw new AssertionFailedError("expected: %s but was: %s", expected, actual);
+    }
 
 
 
@@ -238,4 +251,5 @@ class EvictedMapTest {
         cache.put(1,1);
         assertEquals(cache.get(1), 1);
     }
+
 }
