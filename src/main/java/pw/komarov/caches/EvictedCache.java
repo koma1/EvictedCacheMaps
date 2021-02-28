@@ -25,11 +25,16 @@ public class EvictedCache<K,V> implements EvictedMap<K,V> {
 
         @Override
         public String toString() {
+            if(object == null)
+                return "null";
+
             return object.toString();
         }
 
         @Override
         public boolean equals(Object o) {
+            if(object == null)
+                return false;
             if(o.getClass() != object.getClass())
                 return false;
 
@@ -38,6 +43,9 @@ public class EvictedCache<K,V> implements EvictedMap<K,V> {
 
         @Override
         public int hashCode() {
+            if(object == null)
+                return 0;
+
             return object.hashCode();
         }
     }
@@ -75,7 +83,7 @@ public class EvictedCache<K,V> implements EvictedMap<K,V> {
     }
 
     private CacheEntry getEntry(Object o) {
-        return data.keySet().stream().filter(entry -> (entry.object.equals(o))).findAny().orElse(null);
+        return data.keySet().stream().filter(entry -> ((o == null && entry.object == null) || (entry.object != null && entry.object.equals(o)) )).findAny().orElse(null);
     }
 
     public boolean isEmpty() {
@@ -115,7 +123,7 @@ public class EvictedCache<K,V> implements EvictedMap<K,V> {
             entry = new CacheEntry(k);
 
         if(data.size() == capacity)
-            evictItem();
+            evict();
 
         return data.put(entry, v);
     }
@@ -198,7 +206,7 @@ public class EvictedCache<K,V> implements EvictedMap<K,V> {
     }
 
     @Override
-    public void evictItem() {
+    public void evict() {
         if(!isEmpty())
             data.remove(getEvictedEntry());
     }

@@ -175,6 +175,43 @@ class EvictedCacheTest {
         assertEquals(cache.toString(), "{5=String value for five}");
     }
 
+    @Test
+    void nullAsKeyTest() {
+        EvictedCache<Integer,Integer> cache = new EvictedCache<>(2, new Dummy());
+
+        cache.put(1, 7);
+        assertEquals(cache.size(), 1);
+        assertFalse(cache.containsValue(5));
+        assertFalse(cache.containsKey(null));
+        assertNotEquals(cache.get(null), 5);
+
+        cache.put(null, 5);
+        assertEquals(cache.size(), 2);
+        assertTrue(cache.containsValue(5));
+        assertTrue(cache.containsKey(null));
+        assertEquals(cache.get(null), 5);
+    }
+
+    @Test
+    void nullAsValueTest() {
+        EvictedCache<Integer,Integer> cache = new EvictedCache<>(2, new Dummy());
+        cache.put(5, null);
+        assertEquals(cache.size(), 1);
+        assertTrue(cache.containsKey(5));
+        assertTrue(cache.containsValue(null));
+        assertNull(cache.get(5));
+    }
+
+    @Test
+    void nullAsKeyAndValueTest() {
+        EvictedCache<Integer,Integer> cache = new EvictedCache<>(2, new Dummy());
+        cache.put(5, null);
+        cache.put(null, 5);
+        cache.put(null, null);
+        assertEquals(cache.size(), 2);
+        assertNull(cache.get(null));
+    }
+
     class Dummy implements EvictionComparator {
         @Override
         public int compare(EvictedCache.CacheEntry right, EvictedCache.CacheEntry left) {
